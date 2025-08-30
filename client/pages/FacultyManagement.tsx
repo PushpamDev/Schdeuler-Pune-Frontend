@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/lib/api";
+import {
 import { Plus, Search, Edit, Trash2, Clock, Mail, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,171 +175,69 @@ function FacultyDialog({ faculty, open, onOpenChange, onSave, skills }: FacultyD
 
   useEffect(() => {
     // If we are editing a faculty member, fetch their full schedule
-    if (faculty && open) {
+    if (faculty.id) {
       const fetchAvailability = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/api/availability/faculty/${faculty.id}`);
+          const response = await fetch(`${API_BASE_URL}/api/availability/faculty/${faculty.id}`);
           if (!response.ok) throw new Error('Failed to fetch availability');
-          const availabilityData = await response.json();
+          const data = await response.json();
+          const initialDays = weekDays.reduce((acc, day) => {
+            const newSchedule = createEmptyWeeklySchedule();
+            availabilityData.forEach((slot: any) => {
+              const day = slot.day_of_week.toLowerCase();
+              if (newSchedule[day]) {
+                newSchedule[day].isAvailable = true;
+                newSchedule[day].timeSlots.push({ startTime: slot.start_time, endTime: slot.end_time });
+              }
+            });
 
-          const newSchedule = createEmptyWeeklySchedule();
-          availabilityData.forEach((slot: any) => {
-            const day = slot.day_of_week.toLowerCase();
-            if (newSchedule[day]) {
-              newSchedule[day].isAvailable = true;
-              newSchedule[day].timeSlots.push({ startTime: slot.start_time, endTime: slot.end_time });
-            }
-          });
+            setFormData({
+              name: faculty.name,
+              email: faculty.email,
+              phone: faculty.phone_number || "",
+              skillIds: faculty.skills.map(s => s.id),
+              schedule: newSchedule,
+            });
 
-          setFormData({
-            name: faculty.name,
-            email: faculty.email,
-            phone: faculty.phone_number || "",
-            skillIds: faculty.skills.map(s => s.id),
-            schedule: newSchedule,
-          });
-
-        } catch (error) {
-          console.error("Error fetching faculty availability:", error);
-          // Fallback to basic info with empty schedule
-          setFormData({
-            name: faculty.name,
-            email: faculty.email,
-            phone: faculty.phone_number || "",
-            type: faculty.employment_type,
-            skillIds: faculty.skills.map(s => s.id),
-            schedule: createEmptyWeeklySchedule(),
-          });
-        }
-      };
-      fetchAvailability();
-    } else {
-      // Reset form for adding a new faculty member
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        type: "full-time",
-        skillIds: [],
-        schedule: createEmptyWeeklySchedule(),
-      });
-    }
-  }, [faculty, open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{faculty ? "Edit Faculty" : "Add New Faculty"}</DialogTitle>
-          <DialogDescription>
-            {faculty ? "Update faculty information and schedule." : "Create a new faculty member with their details and availability."}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label>Skills</Label>
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill) => (
-                  <Badge
-                    key={skill.id}
-                    variant={formData.skillIds.includes(skill.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      const isSelected = formData.skillIds.includes(skill.id);
-                      setFormData({
-                        ...formData,
-                        skillIds: isSelected
-                          ? formData.skillIds.filter(id => id !== skill.id)
-                          : [...formData.skillIds, skill.id]
-                      });
-                    }}
-                  >
-                    {skill.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <ScheduleEditor
-            schedule={formData.schedule}
-            onChange={(schedule) => setFormData({ ...formData, schedule })}
-          />
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {faculty ? "Update Faculty" : "Add Faculty"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export default function FacultyManagement() {
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFaculty, setSelectedFaculty] = useState<Faculty | undefined>();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+          } catch (error) {
+            console.error("Error fetching faculty availability:", error);
+            // Fallback to basic info with empty schedule
+            setFormData({
+              name: faculty.name,
+              email: faculty.email,
+              phone: faculty.phone_number || "",
+              type: faculty.employment_type,
+              skillIds: faculty.skills.map(s => s.id),
+              schedule: createEmptyWeeklySchedule(),
+            });
+          }
+        };
+        fetchAvailability();
+      } else {
+        // Reset form for adding a new faculty member
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          type: "full-time",
+          skillIds: [],
+          schedule: createEmptyWeeklySchedule(),
+        });
+      }
+  }, [faculty.id, isModalOpen]);
 
   const fetchFaculties = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/faculty");
+      const response = await fetch(`${API_BASE_URL}/api/faculty`);
       const data = await response.json();
       setFaculties(data);
     } catch (error) {
       console.error("Error fetching faculties:", error);
     }
   };
-
   const fetchSkills = async () => { 
     try {
-      const response = await fetch("http://localhost:3001/api/skills");
+      const response = await fetch(`${API_BASE_URL}/api/skills`);
       const data = await response.json();
       setSkills(data);
     } catch (error) {
@@ -390,7 +290,7 @@ export default function FacultyManagement() {
 
       if (selectedFaculty) {
         // Update existing faculty
-        facultyResponse = await fetch(`http://localhost:3001/api/faculty/${selectedFaculty.id}`, {
+        facultyResponse = await fetch(`${API_BASE_URL}/api/faculty/${selectedFaculty.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(facultyPayload),
@@ -400,7 +300,7 @@ export default function FacultyManagement() {
         }
       } else {
         // Add new faculty
-        facultyResponse = await fetch("http://localhost:3001/api/faculty", {
+        facultyResponse = await fetch(`${API_BASE_URL}/api/faculty`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(facultyPayload),
@@ -412,7 +312,7 @@ export default function FacultyManagement() {
 
       if (facultyResponse && facultyResponse.ok && updatedOrNewFaculty) {
         // Now, save the availability for the new or updated faculty
-        await fetch(`http://localhost:3001/api/availability`, {
+        await fetch(`${API_BASE_URL}/api/availability`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

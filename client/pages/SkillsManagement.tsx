@@ -16,31 +16,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { MoreHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function SkillsManagement() {
   const [skills, setSkills] = useState([]);
-  const [newSkill, setNewSkill] = useState({
-    name: "",
-    category: "",
-    description: "",
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
 
   const fetchSkills = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/skills");
+      const response = await fetch(`${API_BASE_URL}/api/skills`);
       const data = await response.json();
       setSkills(data);
     } catch (error) {
@@ -57,30 +41,28 @@ export default function SkillsManagement() {
     setNewSkill((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSaveSkill = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    try {
-      const response = await fetch("http://localhost:3001/api/skills", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newSkill),
-      });
-      if (response.ok) {
-        fetchSkills(); // Refresh the list
-        setNewSkill({ name: "", category: "", description: "" }); // Reset form
-        setDialogOpen(false); // Close dialog
-      } else {
-        console.error("Failed to save skill");
+  const handleAddSkill = async () => {
+    if (newSkill.trim()) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/skills`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          fetchSkills(); // Refresh the list
+          setNewSkill({ name: "", category: "", description: "" }); // Reset form
+          setDialogOpen(false); // Close dialog
+        } else {
+          console.error("Failed to save skill");
+        }
+      } catch (error) {
+        console.error("Error saving skill:", error);
+      } finally {
+        setIsSaving(false);
       }
-    } catch (error) {
-      console.error("Error saving skill:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    };
 
   return (
     <div className="space-y-6">

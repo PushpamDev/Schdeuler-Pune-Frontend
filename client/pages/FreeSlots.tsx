@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { API_BASE_URL } from "@/lib/api";
 
 // Type Definitions
 interface Faculty {
@@ -63,11 +65,11 @@ export default function FreeSlots() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [facultiesRes, skillsRes] = await Promise.all([
-          fetch("http://localhost:3001/api/faculty"),
-          fetch("http://localhost:3001/api/skills"),
+        const [facultyRes, skillsRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/faculty`),
+            fetch(`${API_BASE_URL}/api/skills`),
         ]);
-        const facultiesData = await facultiesRes.json();
+        const facultyData = await facultyRes.json();
         const skillsData = await skillsRes.json();
         setFaculties(facultiesData);
         setSkills(skillsData);
@@ -102,7 +104,8 @@ export default function FreeSlots() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/free-slots?${params.toString()}`);
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/free-slots?${params.toString()}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

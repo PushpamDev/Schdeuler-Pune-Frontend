@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Faculty {
   id: string;
@@ -296,13 +297,14 @@ export default function Index() {
 
   const fetchData = async () => {
     try {
-      const [facultyRes, batchesRes, skillsRes, studentsRes, activitiesRes] = await Promise.all([
-        fetch("http://localhost:3001/api/faculty"),
-        fetch("http://localhost:3001/api/batches"),
-        fetch("http://localhost:3001/api/skills"),
-        fetch("http://localhost:3001/api/students"),
-        fetch("http://localhost:3001/api/activities"),
-      ]);
+      const [facultyRes, batchesRes, skillsRes, studentsRes, activitiesRes] =
+        await Promise.all([
+          fetch(`${API_BASE_URL}/api/faculty`),
+          fetch(`${API_BASE_URL}/api/batches`),
+          fetch(`${API_BASE_URL}/api/skills`),
+          fetch(`${API_BASE_URL}/api/students`),
+          fetch(`${API_BASE_URL}/api/activities`),
+        ]);
 
       const facultyData = await facultyRes.json();
       const batchesData = await batchesRes.json();

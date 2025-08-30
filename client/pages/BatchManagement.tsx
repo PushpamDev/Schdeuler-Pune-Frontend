@@ -12,6 +12,8 @@ import { Textarea } from "../components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
 import { Toaster } from "../components/ui/sonner";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { API_BASE_URL } from "@/lib/api";
 
 // Type definitions
 export interface Skill {
@@ -108,15 +110,12 @@ function BatchDialog({ batch, open, onOpenChange, onSave, allStudents, onStudent
   const [newStudentPhoneNumber, setNewStudentPhoneNumber] = useState("");
 
   const handleAddStudent = async () => {
-    if (!newStudentName || !newStudentAdmissionNumber) {
-      // Basic validation
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:3001/api/students", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    if (newStudentName.trim() && selectedBatch) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/students`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
         body: JSON.stringify({
           name: newStudentName,
           admission_number: newStudentAdmissionNumber,
@@ -144,11 +143,10 @@ function BatchDialog({ batch, open, onOpenChange, onSave, allStudents, onStudent
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
         const [facultyRes, skillsRes] = await Promise.all([
-          fetch("http://localhost:3001/api/faculty"),
-          fetch("http://localhost:3001/api/skills"),
+          fetch(`${API_BASE_URL}/api/faculty`),
+          fetch(`${API_BASE_URL}/api/skills`),
         ]);
         const facultyData = await facultyRes.json();
         const skillsData = await skillsRes.json();
@@ -495,12 +493,19 @@ export default function BatchManagement() {
 
   const fetchData = async () => {
     try {
-      const [batchesRes, facultyRes, skillsRes, studentsRes] = await Promise.all([
-        fetch("http://localhost:3001/api/batches"),
-        fetch("http://localhost:3001/api/faculty"),
-        fetch("http://localhost:3001/api/skills"),
-        fetch("http://localhost:3001/api/students"),
+      const [facultyRes, skillsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/faculty`),
+        fetch(`${API_BASE_URL}/api/skills`),
       ]);
+      const facultyData = await facultyRes.json();
+      const [batchesRes, facultyRes, skillsRes, studentsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/batches`),
+        fetch(`${API_BASE_URL}/api/faculty`),
+        fetch(`${API_BASE_URL}/api/skills`),
+        fetch(`${API_BASE_URL}/api/students`),
+      ]);
+      const batchesData = await batchesRes.json();
+      const facultyData = await facultyRes.json();
       setBatches(await batchesRes.json());
       setFaculties(await facultyRes.json());
       setSkills(await skillsRes.json());
@@ -643,7 +648,7 @@ export default function BatchManagement() {
   const handleDeleteBatch = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this batch?")) {
       try {
-        const response = await fetch(`http://localhost:3001/api/batches/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/batches/${id}`, {
           method: "DELETE",
         });
         if (response.ok) {
