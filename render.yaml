@@ -1,0 +1,39 @@
+services:
+  # Backend Service
+  - type: web
+    name: my-app-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: "npm install"
+    startCommand: "node server.js"
+    envVars:
+      - key: SUPABASE_URL # Make sure to set this in the Render dashboard
+        sync: false
+      - key: SUPABASE_ANON_KEY # Make sure to set this in the Render dashboard
+        sync: false
+    buildFilter:
+      paths:
+      - backend/**
+
+  # Frontend Service
+  - type: web
+    name: my-app-frontend
+    runtime: node
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: my-app-backend
+          property: url
+    buildFilter:
+      paths:
+      - src/**
+      - public/**
+      - index.html
+      - package.json
+      - vite.config.js
+      - tailwind.config.js
+      ignoredPaths:
+      - backend/**
