@@ -109,19 +109,21 @@ function BatchDialog({ batch, open, onOpenChange, onSave, allStudents, onStudent
   const [newStudentAdmissionNumber, setNewStudentAdmissionNumber] = useState("");
   const [newStudentPhoneNumber, setNewStudentPhoneNumber] = useState("");
 
-  const handleAddStudent = async () => {
+ const handleAddStudent = async () => {
     if (newStudentName.trim() && selectedBatch) {
       try {
         const response = await fetch(`${API_BASE_URL}/api/students`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-        body: JSON.stringify({
-          name: newStudentName,
-          admission_number: newStudentAdmissionNumber,
-          phone_number: newStudentPhoneNumber,
-        }),
-      });
+          },
+          body: JSON.stringify({
+            name: newStudentName,
+            admission_number: newStudentAdmissionNumber,
+            phone_number: newStudentPhoneNumber,
+          }),
+        });
+
 
       if (response.ok) {
         const newStudent = await response.json();
